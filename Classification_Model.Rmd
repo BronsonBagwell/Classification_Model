@@ -1,0 +1,169 @@
+---
+title: 'Classification Models'
+author: "Bronson Bagwell"
+date: "2024-01-24"
+output: html_document
+---
+
+
+```{r, results='hide', warning=FALSE, message=FALSE}
+library(ROCR)
+library(caret)
+library(dplyr)
+library(glmnet)
+library(ggplot2)
+library(tidyverse)
+```
+
+```{r, results='hide'}
+df <- read.csv("GraduateAdmission.csv")
+
+str(df)
+names(df)
+
+df <- df[, -which(names(df) == "Serial.No.")]
+```
+# 1. Prepare the data by converting some of the features to factors.
+```{r}
+cols_to_factorize <- c("UnivRating","Research", "Admit")
+
+for (col in cols_to_factorize) {
+  df[[col]] <- as.factor(df[[col]])
+}
+
+str(df)
+names(df)
+
+```
+# 2. Produce numerical summaries of each feature. 
+
+```{r}
+summary(df)
+```
+# 3. Draw the side by side boxplot of CGPA by Admit. Describe your finding. 
+
+Students with Higher Undergraduate CGPA (out of 10) tend to get accepted to Graduate School at a higher rate. Admission Group CGPA Mean of 8.79 vs the Non-admission CGPA mean of 7.95. 
+
+```{r}
+summary_stats <- df %>%
+  group_by(Admit) %>%
+  summarize(
+    Mean = mean(CGPA),
+    Median = median(CGPA),
+    Q1 = quantile(CGPA, 0.25),
+    Q3 = quantile(CGPA, 0.75)
+  )
+
+print(summary_stats)
+
+ggplot(df, aes(x = Admit, y = CGPA)) +
+  geom_boxplot() +
+  labs(title = "Boxplot of CGPA by Admit",
+       x = "Admit",
+       y = "CGPA")
+
+```
+
+
+
+# 4. What’s the proportion of each class Admit (category)? What’s the benchmark accuracy?
+     
+  0 - 90(22.5%)  
+  
+  1 - 310(77.5%)
+  
+  Benchmark Accuracy 77.5%
+
+```{r}
+table(df$Admit)
+prop.table(table(df$Admit))
+```
+# 5. Split the data into a 80% training set and a 20% test set. Use set.seed(7332.01) for reproducibility
+
+```{r}
+set.seed(7332.01)
+
+Index <- createDataPartition(df$Admit,p=0.8,list=FALSE)
+trdata <- df[Index,] 
+tsdata <- df[-Index,]  
+head(trdata)
+head(tsdata) 
+```
+
+# 6. Find the logistic model with all its predictors in the model significant using the training data set
+```{r}
+# Using all predictors
+logisticm <- glm(Admit ~ ., data = trdata, family = "binomial")
+summary(logisticm)
+
+# Excluding TOEFL, UnivRating, SOP, and Research
+flogisticm <- glm(Admit ~ . - TOEFL - UnivRating - SOP - Research, data = trdata, family = "binomial")
+summary(flogisticm)
+round(coef(flogisticm), 5)
+```
+# 7. Interpret the logistic model coefficients found in question #6 ?
+
+For Every One Unit increase in GRE the Log odds Admission goes up by .07109 All others constant
+
+For Every One Unit increase in LOR the Log odds Admission goes up by .84341 All others constant
+
+For Every One Unit increase in CGPA the Log odds Admission goes up by 2.74230 All others constant
+
+# 8. Predict the testing dataset using the model you found in question #6, compute the confusion matrix and discuss the overall accuracy, misclassification, Sensitivity and Specificity?
+
+ Overall accuracy using the training set 0.8875
+
+ Overall Missclassfication in training Data 0.1125
+
+ Overall Sensitivity using the training set 0.9076923
+
+ Overall Specificity in training Data 0.8
+
+```{r}
+pred_probts <- predict(flogisticm,tsdata,type="response")
+pred_cts  <- ifelse(pred_probts>0.5,1,0) 
+head(pred_cts) 
+head(tsdata)  
+
+conf_ts <- table(Predicted=pred_cts, Actual=tsdata$Admit)
+conf_ts # confusing matrix from Test set
+sum(diag(conf_ts))/sum(conf_ts)   
+1-sum(diag(conf_ts))/sum(conf_ts)
+
+sensitivity <- conf_ts[2, 2] / sum(conf_ts[2, ])
+sensitivity
+specificity <- conf_ts[1, 1] / sum(conf_ts[1, ])
+specificity
+```
+
+# 9. Graph the ROC curve for the testing data and describe it?
+
+The ROC is above the Benchmark Line which is good, the model is better than benchmark
+
+Green Cutoff is around 0.5
+```{r}
+pred_probts <- predict(flogisticm,tsdata,type = 'response')
+pred_probts <- prediction(pred_probts,tsdata$Admit)
+perf_eval <- performance(pred_probts,"acc")
+plot(perf_eval)
+
+ROC <- performance(pred_probts,"tpr","fpr") 
+plot(ROC,xlab="1-Specificity",ylab="Sensitivity",main="Logistic Regression ROC",colorize=TRUE)  
+abline(a=0,b=1,col="red") 
+```
+
+# 10. What is the AUC? Is the accuracy of the mode good? Why or Why not?
+
+A higher AUC indicates that the model has a better ability to distinguish between the positive and negative classes.
+
+AUC > 0.5 suggests a better-than-random model, with higher values indicating better performance.
+```{r}
+AUC <- performance(pred_probts,"auc")
+AUC<- unlist(slot(AUC,"y.values")) 
+AUC <- round(AUC,4)  
+AUC
+plot(ROC,xlab="1-Specificity",ylab="Sensitivity",main="Logistic Regression AUC",colorize=TRUE)
+abline(a=0,b=1,col="red")
+legend(0.3,0.8,AUC,title="AUC",cex=1)
+```
+
