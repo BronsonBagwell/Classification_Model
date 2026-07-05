@@ -10,7 +10,6 @@ output: html_document
 library(ROCR)
 library(caret)
 library(dplyr)
-library(glmnet)
 library(ggplot2)
 library(tidyverse)
 ```
@@ -111,13 +110,13 @@ For Every One Unit increase in CGPA the Log odds Admission goes up by 2.74230 Al
 
 # 8. Predict the testing dataset using the model you found in question #6, compute the confusion matrix and discuss the overall accuracy, misclassification, Sensitivity and Specificity?
 
- Overall accuracy using the training set 0.8875
+ Overall accuracy using the test set 0.8875
 
- Overall Missclassfication in training Data 0.1125
+ Overall Misclassification in test Data 0.1125
 
- Overall Sensitivity using the training set 0.9076923
+ Overall Sensitivity using the test set 0.9516
 
- Overall Specificity in training Data 0.8
+ Overall Specificity in test Data 0.6667
 
 ```{r}
 pred_probts <- predict(flogisticm,tsdata,type="response")
@@ -130,10 +129,13 @@ conf_ts # confusing matrix from Test set
 sum(diag(conf_ts))/sum(conf_ts)   
 1-sum(diag(conf_ts))/sum(conf_ts)
 
-sensitivity <- conf_ts[2, 2] / sum(conf_ts[2, ])
-sensitivity
-specificity <- conf_ts[1, 1] / sum(conf_ts[1, ])
-specificity
+cm <- caret::confusionMatrix(
+  factor(pred_cts, levels = c(0, 1)),
+  factor(tsdata$Admit, levels = c(0, 1)),
+  positive = "1")
+cm$overall["Accuracy"]
+cm$byClass["Sensitivity"]
+cm$byClass["Specificity"]
 ```
 
 # 9. Graph the ROC curve for the testing data and describe it?
