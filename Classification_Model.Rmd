@@ -140,7 +140,7 @@ cm$byClass["Specificity"]
 
 # 9. Graph the ROC curve for the testing data and describe it?
 
-The ROC is above the Benchmark Line which is good, the model is better than benchmark
+The ROC curve is above the red diagonal (random-guess) line which is good, the model discriminates better than chance
 
 Green Cutoff is around 0.5
 ```{r}

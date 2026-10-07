@@ -1,18 +1,18 @@
 # Classification Model
-Predicting graduate admission outcomes using logistic regression with manual backward selection to all-significant predictors (GRE, LOR, CGPA).
+Predicting graduate admission outcomes using logistic regression reduced to its significant predictors (GRE, LOR, CGPA).
 
 ## Overview
-This project builds a logistic regression classification model to predict whether a student will be admitted to a graduate program. The analysis uses manual backward selection to arrive at a model in which all predictors (GRE, LOR, CGPA) are significant, and evaluates predictive performance using ROC curves and confusion matrices.
+This project builds a logistic regression classification model to predict whether a student will be admitted to a graduate program. The analysis fits the full model, drops the predictors that are not significant, and arrives at a model in which all predictors (GRE, LOR, CGPA) are significant, and evaluates predictive performance using ROC curves and confusion matrices.
 
 ## Dataset
-- **Source:** Graduate Admission dataset (500 records)
+- **Source:** Graduate Admission dataset (400 records)
 - **Key variables:** GRE Score, TOEFL Score, University Rating, SOP, LOR, CGPA, Research Experience, Admission outcome
 
 ## Methods
 - Binary logistic regression (`glm`, binomial family); manual variable selection; evaluation via confusion matrix, ROC, and AUC (`ROCR`)
 
 ## Key Findings
-- GRE Score, LOR, and CGPA were the significant predictors of admission retained by backward selection
+- GRE Score, LOR, and CGPA were the significant predictors of admission retained in the final model
 - The final model clearly outperforms the 77.5% benchmark accuracy on the test set
 
 ## Tools & Libraries
